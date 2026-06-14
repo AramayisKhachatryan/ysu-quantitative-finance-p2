@@ -1,0 +1,521 @@
+\documentclass{beamer}
+
+\usetheme{Madrid}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\title{Project 2: YSU Quantitative Finance}
+\author{Aramayis, Armen, Tigran}
+\institute{Yerevan State University}
+\date{June - 17, 2026}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\begin{frame}{Outline}
+    \tableofcontents
+\end{frame}
+
+
+
+
+
+\section{Project 2b - Bayesian Update}
+
+\begin{frame}{Bayesian Updates: Bernoulli Data}
+    Model each binary outcome $X_i \in \{0,1\}$ (e.g. is the daily return positive?) as
+    $X_i \overset{iid}{\sim} \text{Bernoulli}(p)$.
+
+    \textbf{Prior:} $p \sim \text{Beta}(a, b)$, default $a = b = 1$ (Uniform)
+
+    \textbf{Posterior} (conjugacy), with $s = \sum x_i$ successes out of $n$:
+    \[
+        p \mid \text{data} \sim \text{Beta}(a+s,\ b+n-s)
+    \]
+
+    \textbf{Estimates} from posterior $\text{Beta}(a', b')$:
+    \[
+        \hat{p}_{\text{MAP}} = \frac{a'-1}{a'+b'-2}, \qquad
+        \hat{p}_{\text{Bayes}} = \frac{a'}{a'+b'}
+    \]
+\end{frame}
+
+\begin{frame}{Bernoulli Example: Toy Data}
+    Prior $\text{Beta}(1,1)$, data \texttt{1100101100} ($n=10$, $s=5$ successes)
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/bernoulli_dashboard.png}
+    \end{center}
+    Posterior $\text{Beta}(6,6)$, \quad $\hat{p}_{\text{MAP}} = \hat{p}_{\text{Bayes}} = 0.500$
+\end{frame}
+
+\begin{frame}{Bernoulli Example: Is AAPL's Daily Return Positive?}
+    $X_t = 1$ if AAPL's daily log return is positive, $0$ otherwise. Prior $\text{Beta}(1,1)$,
+    $n = 1356$ days, $s = 719$ positive days.
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/bernoulli_aapl.png}
+    \end{center}
+    Posterior $\text{Beta}(720, 638)$, \quad $\hat{p}_{\text{MAP}} = \hat{p}_{\text{Bayes}} \approx 0.530$
+    \begin{itemize}
+        \item AAPL closes up on $\approx 53\%$ of days -- slightly more often than not
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Bayesian Updates: Normal Data}
+    Model $X_i \overset{iid}{\sim} N(\mu, \sigma^2)$ with \textbf{known} $\sigma$ (e.g. the
+    mean daily return $\mu$ of a stock).
+
+    \textbf{Prior:} $\mu \sim N(\mu_0, \sigma_0^2)$, default $\mu_0 = 0$, $\sigma_0 = 1$
+
+    \textbf{Posterior} (conjugacy), with sample mean $\bar{x}$:
+    \[
+        \mu \mid \text{data} \sim N(\mu_n, \sigma_n^2), \qquad
+        \frac{1}{\sigma_n^2} = \frac{1}{\sigma_0^2} + \frac{n}{\sigma^2}, \qquad
+        \mu_n = \sigma_n^2\left(\frac{\mu_0}{\sigma_0^2} + \frac{n\bar{x}}{\sigma^2}\right)
+    \]
+
+    For a Normal posterior, mode = mean:
+    \[
+        \hat{\mu}_{\text{MAP}} = \hat{\mu}_{\text{Bayes}} = \mu_n
+    \]
+\end{frame}
+
+\begin{frame}{Normal Example: Toy Data}
+    $\sigma = 1$, prior $N(0,1)$, data $0.123,\ 1.3812,\ -0.13$ ($n=3$)
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/normal_dashboard.png}
+    \end{center}
+    Posterior $N(0.344,\ 0.25)$, \quad $\hat{\mu}_{\text{MAP}} = \hat{\mu}_{\text{Bayes}} = 0.344$
+\end{frame}
+
+\begin{frame}{Normal Example: Mean of AAPL Daily Returns}
+    $\sigma$ fixed at the sample std of AAPL's log returns, prior $N(0,1)$, $n = 1356$
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/normal_aapl.png}
+    \end{center}
+    Posterior mean $\hat{\mu}_{\text{Bayes}} \approx 0.0007$ -- with $n = 1356$, the data
+    completely dominates the (wide) prior
+\end{frame}
+
+\begin{frame}{Supplementary: Does the Posterior Forget the Prior?}
+    Known true $\mu = 2$, $\sigma = 1$; prior $N(0,1)$ (deliberately off-center). Generate
+    $n$ points from the true distribution and compute the posterior.
+    \begin{center}
+        \includegraphics[width=0.95\textwidth]{../figures/normal_convergence.png}
+    \end{center}
+    \begin{itemize}
+        \item As $n$ grows, the posterior narrows and shifts toward the true $\mu$
+        \item The prior's influence vanishes as $n \to \infty$
+    \end{itemize}
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Project 2c - Linear Regression Models}
+% \subsection{Part I: Linear Regression Models}
+
+% \subsection{Data and Methodology}
+
+\begin{frame}{Data and Methodology}
+    \begin{itemize}
+        \item \textbf{Tickers:} \texttt{\^{}IXIC} (NASDAQ Composite), \texttt{AAPL} (Apple), \texttt{GOOGL} (Alphabet)
+        \item \textbf{Period:} 2021-01-01 to 2026-06-01, daily data ($\approx 1356$ observations)
+        \item \textbf{Variable:} daily log returns
+        \[
+            r_t = \log\left(\frac{P_t}{P_{t-1}}\right)
+        \]
+        \item \textbf{Method:} Ordinary Least Squares (OLS), via \texttt{statsmodels}
+    \end{itemize}
+\end{frame}
+
+% \subsection{Stage 1: Simple Linear Regression}
+
+\begin{frame}{Model 1: Index Return($t$) $\to$ Stock Return($t$)}
+    \textbf{Question:} Can market index returns explain individual stock returns?
+    \[
+        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{NASDAQ Return})_t + \varepsilon_t
+    \]
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_1.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Model 1: Results}
+    \[
+        \widehat{\text{AAPL}}_t = 0.00015 + 0.940 \cdot \text{IXIC}_t
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Coefficient & Estimate & $p$-value \\
+            \midrule
+            $\beta_0$ (intercept) & $0.00015$ & $0.625$ (not significant) \\
+            $\beta_1$ (IXIC$_t$)  & $0.940$   & $\approx 5\times10^{-260}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    $R^2 = 0.584$, \quad Adjusted $R^2 = 0.583$
+    \begin{itemize}
+        \item AAPL's daily return moves almost one-for-one with the NASDAQ ($\beta_1 \approx 1$)
+        \item $\approx 58\%$ of AAPL's return variance is explained by the index return
+        \item Residuals: fat-tailed (kurtosis $\approx 6$), Durbin-Watson $\approx 1.84$
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Model 2: Lagged Index Return($t{-}1$) $\to$ Stock Return($t$)}
+    \textbf{Question:} Can past returns help predict future returns?
+    \[
+        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{NASDAQ Return})_{t-1} + \varepsilon_t
+    \]
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_2.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Model 2: Results}
+    \[
+        \widehat{\text{AAPL}}_t = 0.00066 - 0.0024 \cdot \text{IXIC}_{t-1}
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Coefficient & Estimate & $p$-value \\
+            \midrule
+            $\beta_0$ (intercept)   & $0.00066$ & $0.159$ (not significant) \\
+            $\beta_1$ (IXIC$_{t-1}$) & $-0.0024$ & $0.943$ (not significant) \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    $R^2 \approx 0.0000$, \quad Adjusted $R^2 \approx -0.0007$
+    \begin{itemize}
+        \item Yesterday's NASDAQ return has \textbf{no} predictive power for today's AAPL return
+        \item Consistent with the (weak-form) Efficient Market Hypothesis
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Model 3: Google Return($t$) $\to$ Apple Return($t$)}
+    \textbf{Question:} Can one stock's returns explain another stock's returns?
+    \[
+        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{GOOGL Return})_t + \varepsilon_t
+    \]
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_3.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Model 3: Results}
+    \[
+        \widehat{\text{AAPL}}_t = 0.00013 + 0.496 \cdot \text{GOOGL}_t
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Coefficient & Estimate & $p$-value \\
+            \midrule
+            $\beta_0$ (intercept)  & $0.00013$ & $0.750$ (not significant) \\
+            $\beta_1$ (GOOGL$_t$)  & $0.496$   & $\approx 6.5\times10^{-113}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    $R^2 = 0.314$, \quad Adjusted $R^2 = 0.313$
+    \begin{itemize}
+        \item A 1\% same-day move in GOOGL is associated with a $\approx 0.5\%$ move in AAPL
+        \item $\approx 31\%$ of AAPL's variance explained -- less than the index (Model 1, 58\%)
+        \item Suggests a common market/sector factor, not a direct causal link
+    \end{itemize}
+\end{frame}
+
+% \subsection{Stage 1: Summary}
+
+\begin{frame}{Stage 1: Summary}
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            Model & Predictor & $R^2$ & Significant? \\
+            \midrule
+            1 & IXIC$_t$      & $0.584$ & Yes \\
+            2 & IXIC$_{t-1}$  & $0.000$ & No \\
+            3 & GOOGL$_t$     & $0.314$ & Yes \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item Same-day market index return strongly explains AAPL's return ($R^2 = 0.58$)
+        \item Lagged (past) returns carry \textbf{no} predictive information -- market efficiency
+        \item Same-day peer-stock (GOOGL) return also explains a sizeable share ($R^2 = 0.31$),
+              likely via shared exposure to the market factor
+    \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Model A: Full Lagged Model}
+    \textbf{Question:} Can past returns predict future returns?
+    \footnotesize
+    \[
+        \text{AAPL}_t = \beta_0 + \beta_1 \text{IXIC}_{t-1} + \beta_2 \text{AAPL}_{t-1} +\]
+        \[+\beta_3\text{MA}_{20}+\beta_4\text{MA}_{50}+\beta_5\text{MA}_{200}+\]
+        \[+\beta_6\text{VOL}_{20}+\beta_7\text{VOL}_{20}+\beta_8\text{VOL}_{20}+\]
+        \[+\beta_9\Delta\text{Volume}_{t-1}+\beta_{10}\text{VolRatio}_{t-1}+\varepsilon_t\]
+
+    \normalsize
+    $R^2 = 0.010$, \quad Adjusted $R^2 = 0.001$, \quad $F$-test $p = 0.336$
+    \begin{itemize}
+        \item Overall model is \textbf{not statistically significant}
+        \item Only \texttt{VolumeChg\_lag1} is individually significant ($p = 0.031$)
+        % \item All VIFs $< 5$ (max $\approx 3.4$) -- not a multicollinearity problem, these
+        %       features simply carry no information
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Model B: Reduced Model}
+    \[
+        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{IXIC}_{t-1} + \beta_2 \cdot \text{AAPL}_{t-1} + \varepsilon_t
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Coefficient & Estimate & $p$-value \\
+            \midrule
+            $\beta_0$ (intercept)            & $0.0007$  & $0.201$ \\
+            $\beta_1$ (\texttt{IXIC\_lag1})  & $-0.0007$ & $0.383$ \\
+            $\beta_2$ (\texttt{AAPL\_lag1})  & $0.0009$  & $0.243$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    $R^2 = 0.001$, \quad Adjusted $R^2 = -0.001$, \quad $F$-test $p = 0.506$
+    \begin{itemize}
+        \item Mirrors Stage 1 Model 2: lagged index return still has zero predictive power
+        \item Own lagged return adds nothing either
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Model C: Volume-Focused Model}
+    \textbf{Question:} Can trading volume explain/predict returns?
+    \[
+        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{AAPL}_{t-1} + \beta_2 \cdot \Delta\text{Volume}_{t-1}
+        + \beta_3 \cdot \text{VolRatio}_{t-1} + \varepsilon_t
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Coefficient & Estimate & $p$-value \\
+            \midrule
+            $\beta_0$ (intercept)                  & $0.0007$  & $0.200$ \\
+            $\beta_1$ (\texttt{AAPL\_lag1})        & $0.0004$  & $0.471$ \\
+            $\beta_2$ (\texttt{VolumeChg\_lag1})   & $-0.0013$ & $0.032$ \\
+            $\beta_3$ (\texttt{VolumeRatio\_lag1}) & $0.0009$  & $0.158$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    $R^2 = 0.005$, \quad Adjusted $R^2 = 0.002$, \quad $F$-test $p = 0.152$
+    \begin{itemize}
+        \item Overall model not significant, but \texttt{VolumeChg\_lag1} is ($p = 0.032$)
+        \item With 10 predictors tested in Model A, one hit at $p \approx 0.03$ is roughly
+              what chance alone would produce
+    \end{itemize}
+\end{frame}
+
+% \subsection{Stage 3: Model Evaluation and Selection}
+
+\begin{frame}{Model Comparison}
+    \begin{table}
+        \centering
+        \begin{tabular}{lcccc}
+            \toprule
+            Model & $R^2$ & Adj. $R^2$ & AIC & BIC \\
+            \midrule
+            A (full lagged)    & $0.010$ & $0.001$  & $-6053.4$ & $-5997.9$ \\
+            B (reduced)        & $0.001$ & $-0.001$ & $-6059.5$ & $-6044.3$ \\
+            C (volume-focused) & $0.005$ & $0.002$  & $-6061.4$ & $-6041.2$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item Model C has the lowest AIC; Model B has the lowest BIC -- the differences are negligible
+        \item Model A is worst on both criteria (most parameters, no gain in fit)
+        \item \textbf{None} of the three models pass the overall $F$-test at the 5\% level
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Residual Diagnostics (Model C)}
+    \begin{itemize}
+        \item Durbin--Watson $\approx 2.00$ -- no autocorrelation in residuals
+        \item Jarque--Bera strongly rejects normality; kurtosis $\approx 8.7$
+        \item Same fat-tailed pattern as Stage 1 -- typical of daily financial returns, and
+              largely independent of which (weak) model is used
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Stage 2/3: Summary}
+    \begin{itemize}
+        \item \textbf{Market index returns:} explain AAPL \emph{contemporaneously} ($R^2 = 0.58$,
+              Stage 1), but the lagged index has \textbf{zero} predictive power ($R^2 \approx 0$)
+        \item \textbf{Past returns:} across Models A, B, C, $R^2 \le 1\%$ and the $F$-test is
+              never significant -- past returns do \textbf{not} predict future returns
+        \item \textbf{Trading volume:} \texttt{VolumeChg\_lag1} is marginally significant alone
+              ($p \approx 0.03$), but the overall volume model is not ($p = 0.152$) -- weak,
+              inconclusive evidence
+        \item \textbf{Conclusion:} results are consistent with (weak-form) market efficiency --
+              information is priced in immediately, leaving no exploitable pattern in lagged data
+    \end{itemize}
+\end{frame}
+
+\section{Project 2c - Markov Chain Models}
+
+\begin{frame}{Defining Market Regimes}
+    Classify each day's NASDAQ Composite (\texttt{\^{}IXIC}) into \textbf{Bull}, \textbf{Neutral},
+    or \textbf{Bear} using the 20-day rolling cumulative log return
+    \[
+        R_t = \sum_{i=0}^{19} r_{t-i}, \qquad \theta = 0.5 \cdot \text{std}(R_t)
+    \]
+    \[
+        \text{Regime}_t =
+        \begin{cases}
+            \text{Bull}    & R_t > \theta \\
+            \text{Bear}    & R_t < -\theta \\
+            \text{Neutral} & \text{otherwise}
+        \end{cases}
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            Regime & Bull & Neutral & Bear \\
+            \midrule
+            Days (\%) & $554$ ($41.4\%$) & $465$ ($34.8\%$) & $318$ ($23.8\%$) \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{NASDAQ Composite Colored by Regime}
+    \begin{center}
+        \includegraphics[width=0.95\textwidth]{../figures/regime_plot.png}
+    \end{center}
+\end{frame}
+
+\begin{frame}{Transition Probability Matrix}
+    \[
+        P_{ij} = P(\text{Regime}_{t+1} = j \mid \text{Regime}_t = i)
+    \]
+    \[
+        P =
+        \begin{pmatrix}
+            0.879 & 0.121 & 0.000 \\
+            0.144 & 0.751 & 0.105 \\
+            0.000 & 0.154 & 0.846
+        \end{pmatrix}
+        \quad \text{(rows/cols: Bull, Neutral, Bear)}
+    \]
+    \begin{itemize}
+        \item All three regimes are highly \textbf{persistent} (diagonal $\approx 0.75$--$0.88$)
+        \item $P(\text{Bull}\to\text{Bear}) = P(\text{Bear}\to\text{Bull}) = 0$ -- the market
+              always passes through Neutral
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Stationary Distribution}
+    $\pi P = \pi$, $\sum_i \pi_i = 1$
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            Regime & Stationary $\pi$ & Observed frequency \\
+            \midrule
+            Bull    & $0.414$ & $0.414$ \\
+            Neutral & $0.348$ & $0.348$ \\
+            Bear    & $0.238$ & $0.238$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item Stationary distribution matches observed frequencies almost exactly --
+              the chain is essentially already at its long-run distribution
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Predicting the Next Regime}
+    Given the current regime $i$, the most probable next regime is $\arg\max_j P_{ij}$.
+    \begin{itemize}
+        \item Last observed regime: \textbf{Bull}
+        \item $P(\text{Bull} \to \text{Bull}) = 0.879$, \quad
+              $P(\text{Bull} \to \text{Neutral}) = 0.121$, \quad
+              $P(\text{Bull} \to \text{Bear}) = 0.000$
+        \item \textbf{Predicted next regime: Bull}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Simulating the Markov Chain}
+    Simulate a regime sequence of the same length from $P$ and compare to the observed data.
+    \begin{table}
+        \centering
+        \begin{tabular}{lcc}
+            \toprule
+            & \multicolumn{2}{c}{Frequency} \\
+            Regime & Observed & Simulated \\
+            \midrule
+            Bull    & $0.414$ & $0.476$ \\
+            Neutral & $0.348$ & $0.301$ \\
+            Bear    & $0.238$ & $0.223$ \\
+            \bottomrule
+        \end{tabular}
+        \qquad
+        \begin{tabular}{lcc}
+            \toprule
+            & \multicolumn{2}{c}{Avg. run length (days)} \\
+            Regime & Observed & Simulated \\
+            \midrule
+            Bull    & $8.1$ & $8.8$ \\
+            Neutral & $4.0$ & $3.3$ \\
+            Bear    & $6.5$ & $6.0$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \begin{itemize}
+        \item A first-order Markov chain reproduces both the regime frequencies and the
+              average regime durations reasonably well
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Part III: Summary}
+    \begin{itemize}
+        \item Market regimes (Bull/Neutral/Bear) are \textbf{highly persistent}, and the
+              chain is essentially at its stationary distribution
+        \item The model predicts the current Bull regime will most likely continue
+        \item However, persistence is largely \textbf{mechanical}: $R_t$ is a 20-day rolling
+              sum, so $R_t$ and $R_{t-1}$ share 19 of 20 terms and are highly correlated by
+              construction
+        \item Consistent with Stage 1: \emph{daily returns} themselves remain essentially
+              unpredictable (weak-form efficiency); only the smoothed regime label is
+              persistent
+    \end{itemize}
+\end{frame}
+
+\end{document}
