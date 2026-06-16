@@ -162,7 +162,7 @@
 
 \begin{frame}{Model 1: Results}
     \[
-        \widehat{\text{AAPL}}_t = 0.00015 + 0.940 \cdot \text{IXIC}_t
+        \widehat{\text{AAPL}}_t = 0.00015 + 0.940 \cdot \text{NASDAQ}_t
     \]
     \begin{table}
         \centering
@@ -171,7 +171,7 @@
             Coefficient & Estimate & $p$-value \\
             \midrule
             $\beta_0$ (intercept) & $0.00015$ & $0.625$ (not significant) \\
-            $\beta_1$ (IXIC$_t$)  & $0.940$   & $\approx 5\times10^{-260}$ \\
+            $\beta_1$ (NASDAQ$_t$)  & $0.940$   & $\approx 5\times10^{-260}$ \\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -179,7 +179,7 @@
     \begin{itemize}
         \item AAPL's daily return moves almost one-for-one with the NASDAQ ($\beta_1 \approx 1$)
         \item $\approx 58\%$ of AAPL's return variance is explained by the index return
-        \item Residuals: fat-tailed (kurtosis $\approx 6$), Durbin-Watson $\approx 1.84$
+        \item Residuals are fat-tailed (kurtosis $\approx 6$) -- typical of daily financial returns
     \end{itemize}
 \end{frame}
 
@@ -195,7 +195,7 @@
 
 \begin{frame}{Model 2: Results}
     \[
-        \widehat{\text{AAPL}}_t = 0.00066 - 0.0024 \cdot \text{IXIC}_{t-1}
+        \widehat{\text{AAPL}}_t = 0.00066 - 0.0024 \cdot \text{NASDAQ}_{t-1}
     \]
     \begin{table}
         \centering
@@ -204,7 +204,7 @@
             Coefficient & Estimate & $p$-value \\
             \midrule
             $\beta_0$ (intercept)   & $0.00066$ & $0.159$ (not significant) \\
-            $\beta_1$ (IXIC$_{t-1}$) & $-0.0024$ & $0.943$ (not significant) \\
+            $\beta_1$ (NASDAQ$_{t-1}$) & $-0.0024$ & $0.943$ (not significant) \\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -257,8 +257,8 @@
             \toprule
             Model & Predictor & $R^2$ & Significant? \\
             \midrule
-            1 & IXIC$_t$      & $0.584$ & Yes \\
-            2 & IXIC$_{t-1}$  & $0.000$ & No \\
+            1 & NASDAQ$_t$      & $0.584$ & Yes \\
+            2 & NASDAQ$_{t-1}$  & $0.000$ & No \\
             3 & GOOGL$_t$     & $0.314$ & Yes \\
             \bottomrule
         \end{tabular}
@@ -277,7 +277,7 @@
     \textbf{Question:} Can past returns predict future returns?
     \footnotesize
     \[
-        \text{AAPL}_t = \beta_0 + \beta_1 \text{IXIC}_{t-1} + \beta_2 \text{AAPL}_{t-1} +\]
+        \text{AAPL}_t = \beta_0 + \beta_1 \text{NASDAQ}_{t-1} + \beta_2 \text{AAPL}_{t-1} +\]
         \[+\beta_3\text{MA}_{20}+\beta_4\text{MA}_{50}+\beta_5\text{MA}_{200}+\]
         \[+\beta_6\text{VOL}_{20}+\beta_7\text{VOL}_{20}+\beta_8\text{VOL}_{20}+\]
         \[+\beta_9\Delta\text{Volume}_{t-1}+\beta_{10}\text{VolRatio}_{t-1}+\varepsilon_t\]
@@ -294,7 +294,7 @@
 
 \begin{frame}{Model B: Reduced Model}
     \[
-        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{IXIC}_{t-1} + \beta_2 \cdot \text{AAPL}_{t-1} + \varepsilon_t
+        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{NASDAQ}_{t-1} + \beta_2 \cdot \text{AAPL}_{t-1} + \varepsilon_t
     \]
     \begin{table}
         \centering
@@ -303,7 +303,7 @@
             Coefficient & Estimate & $p$-value \\
             \midrule
             $\beta_0$ (intercept)            & $0.0007$  & $0.201$ \\
-            $\beta_1$ (\texttt{IXIC\_lag1})  & $-0.0007$ & $0.383$ \\
+            $\beta_1$ (\texttt{NASDAQ\_lag1})  & $-0.0007$ & $0.383$ \\
             $\beta_2$ (\texttt{AAPL\_lag1})  & $0.0009$  & $0.243$ \\
             \bottomrule
         \end{tabular}
@@ -366,9 +366,9 @@
 
 \begin{frame}{Residual Diagnostics (Model C)}
     \begin{itemize}
-        \item Durbin--Watson $\approx 2.00$ -- no autocorrelation in residuals
-        \item Jarque--Bera strongly rejects normality; kurtosis $\approx 8.7$
-        \item Same fat-tailed pattern as Stage 1 -- typical of daily financial returns, and
+        \item No significant autocorrelation in residuals
+        \item Residuals are fat-tailed (kurtosis $\approx 8.7$) -- normality is rejected
+        \item Same pattern as Stage 1 -- typical of daily financial returns, and
               largely independent of which (weak) model is used
     \end{itemize}
 \end{frame}
@@ -516,6 +516,18 @@
               unpredictable (weak-form efficiency); only the smoothed regime label is
               persistent
     \end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+    \begin{center}
+        {\Huge Questions?}
+    \end{center}
+\end{frame}
+
+\begin{frame}[plain]
+    \begin{center}
+        {\Huge Thank you!}
+    \end{center}
 \end{frame}
 
 \end{document}
