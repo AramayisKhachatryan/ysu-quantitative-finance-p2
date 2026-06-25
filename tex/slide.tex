@@ -43,6 +43,11 @@
         \hat{p}_{\text{MAP}} = \frac{a'-1}{a'+b'-2}, \qquad
         \hat{p}_{\text{Bayes}} = \frac{a'}{a'+b'}
     \]
+    \begin{itemize}
+        \item \textbf{Why Beta?} Beta is the conjugate prior for Bernoulli because the posterior
+              has the same Beta functional form as the prior -- updating reduces to incrementing
+              the shape parameters: $a' = a + s$,\ $b' = b + (n-s)$
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Bernoulli Example: Toy Data}
@@ -51,6 +56,10 @@
         \includegraphics[width=0.6\textwidth]{../figures/bernoulli_dashboard.png}
     \end{center}
     Posterior $\text{Beta}(6,6)$, \quad $\hat{p}_{\text{MAP}} = \hat{p}_{\text{Bayes}} = 0.500$
+    \begin{itemize}
+        \item MAP and Bayes estimates coincide here because $\text{Beta}(6,6)$ is symmetric;
+              for an asymmetric posterior they would generally differ
+    \end{itemize}
 \end{frame}
 
 \begin{frame}{Bernoulli Example: Is AAPL's Daily Return Positive?}
@@ -62,6 +71,8 @@
     Posterior $\text{Beta}(720, 638)$, \quad $\hat{p}_{\text{MAP}} = \hat{p}_{\text{Bayes}} \approx 0.530$
     \begin{itemize}
         \item AAPL closes up on $\approx 53\%$ of days -- slightly more often than not
+        \item 95\% credible interval: $[0.5036,\ 0.5567]$ -- AAPL closes up slightly more
+              than half the time, but with meaningful uncertainty remaining
     \end{itemize}
 \end{frame}
 
@@ -99,6 +110,23 @@
     \end{center}
     Posterior mean $\hat{\mu}_{\text{Bayes}} \approx 0.0007$ -- with $n = 1356$, the data
     completely dominates the (wide) prior
+    \begin{itemize}
+        \item $0.07\%$ daily return compounds to approximately $19.28\%$ annually
+              (252 trading days) -- statistically detectable but economically modest drift
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Why Bayes? From Estimate to Decision}
+    A frequentist gives a point estimate $\hat{p} = 0.530$ and a confidence interval.
+
+    The Bayesian posterior gives the \textbf{full probability distribution} over $p$ --
+    so we can make direct probability statements:
+    \begin{itemize}
+        \item $P(p > 0.5 \mid \text{data}) = 0.987$ \quad ($98.7\%$)
+        \item $P(p < 0.5 \mid \text{data}) = 0.013$ \quad ($1.3\%$)
+    \end{itemize}
+    We are $\mathbf{98.7\%}$ confident AAPL is an upward-drifting asset -- a statement
+    a frequentist confidence interval cannot make directly.
 \end{frame}
 
 \begin{frame}{Supplementary: Does the Posterior Forget the Prior?}
@@ -110,6 +138,11 @@
     \begin{itemize}
         \item As $n$ grows, the posterior narrows and shifts toward the true $\mu$
         \item The prior's influence vanishes as $n \to \infty$
+        \item \textbf{Bernstein--von Mises theorem:} as $n \to \infty$, the posterior
+              converges to a Normal distribution centered at the true parameter, with
+              variance equal to the inverse Fisher information -- regardless of the prior
+        \item \textbf{Implication:} with enough data, Bayesian and frequentist inference
+              agree. The prior only matters when data is scarce
     \end{itemize}
 \end{frame}
 
@@ -130,6 +163,20 @@
 
 
 
+
+\begin{frame}{What the Three Methods Agree On}
+    \begin{itemize}
+        \item \textbf{Linear Regression:} only contemporaneous information explains
+              returns -- lagged predictors have $R^2 \approx 0$
+        \item \textbf{Bayesian Analysis:} stable long-run parameters exist
+              ($\hat{p} \approx 0.530$,\ $\hat{\mu} \approx 0.0007$) but with
+              uncertainty quantified via the full posterior
+        \item \textbf{Markov Chains:} regime structure is persistent, but mechanically
+              so due to the rolling-window construction
+        \item \textbf{Common thread:} weak-form market efficiency -- daily prices are
+              unpredictable, but statistical structure exists at longer timescales
+    \end{itemize}
+\end{frame}
 
 \section{Project 2c - Linear Regression Models}
 % \subsection{Part I: Linear Regression Models}
