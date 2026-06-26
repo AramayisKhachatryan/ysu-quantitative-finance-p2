@@ -179,123 +179,109 @@
 \end{frame}
 
 \section{Project 2c - Linear Regression Models}
-% \subsection{Part I: Linear Regression Models}
 
-% \subsection{Data and Methodology}
-
+% ===================== DATA & METHODOLOGY =====================
 \begin{frame}{Data and Methodology}
     \begin{itemize}
-        \item \textbf{Tickers:} \texttt{\^{}IXIC} (NASDAQ Composite), \texttt{AAPL} (Apple), \texttt{GOOGL} (Alphabet)
-        \item \textbf{Period:} 2021-01-01 to 2026-06-01, daily data ($\approx 1356$ observations)
-        \item \textbf{Variable:} daily log returns
-        \[
-            r_t = \log\left(\frac{P_t}{P_{t-1}}\right)
-        \]
-        \item \textbf{Method:} Ordinary Least Squares (OLS), via \texttt{statsmodels}
+        \item \textbf{Selection:} stocks from one sector --- \textbf{Technology} (5 names):
+              \texttt{AAPL}, \texttt{MSFT}, \texttt{NVDA}, \texttt{GOOGL}, \texttt{META}
+        \item \textbf{Market index:} \texttt{\^{}GSPC} (S\&P 500)
+        \item \textbf{Period:} 2021-01-01 to 2026-06-01, daily ($\approx 1356$ obs)
+        \item \textbf{Variable:} daily log returns $r_t = \log\!\left(P_t/P_{t-1}\right)$
+        \item \textbf{Method:} OLS via \texttt{statsmodels}; inference re-run with
+              heteroskedasticity / autocorrelation-robust (HC/HAC) standard errors
     \end{itemize}
 \end{frame}
 
-% \subsection{Stage 1: Simple Linear Regression}
-
-\begin{frame}{Model 1: Index Return($t$) $\to$ Stock Return($t$)}
-    \textbf{Question:} Can market index returns explain individual stock returns?
-    \[
-        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{NASDAQ Return})_t + \varepsilon_t
-    \]
+\begin{frame}{Strong Co-movement Across the Sector}
+    Daily-return correlations among the five tech stocks and the index.
     \begin{center}
-        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_1.png}
+        \includegraphics[width=0.55\textwidth]{Screenshot 2026-06-26 at 12.24.21.png}
     \end{center}
+    \begin{itemize}
+        \item All pairs are strongly positively correlated -- the stocks move together
+        \item This is the ``can one stock explain another?'' question: the answer is
+              \emph{yes}, but it reflects a \textbf{shared market factor}, not a direct link
+    \end{itemize}
 \end{frame}
 
-\begin{frame}{Model 1: Results}
+% ===================== STAGE 1 =====================
+\begin{frame}{Stage 1: Three Simple Linear Regressions}
+    For each stock we fit three single-predictor models (shown here for \texttt{AAPL}):
+    \begin{align*}
+        \text{(A) Market:}        && \text{AAPL}_t &= \beta_0 + \beta_1\,\text{S\&P 500}_t + \varepsilon_t\\[2pt]
+        \text{(B) Lagged market:} && \text{AAPL}_t &= \beta_0 + \beta_1\,\text{S\&P 500}_{t-1} + \varepsilon_t\\[2pt]
+        \text{(C) Own lag (AR1):} && \text{AAPL}_t &= \beta_0 + \beta_1\,\text{AAPL}_{t-1} + \varepsilon_t
+    \end{align*}
+    \begin{itemize}
+        \item (A) Can the market index explain individual stock returns?
+        \item (B), (C) Can past returns predict future returns?
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Model A: Market Model (contemporaneous)}
+    \textbf{Can market index returns explain individual stock returns?}
     \[
-        \widehat{\text{AAPL}}_t = 0.00015 + 0.940 \cdot \text{NASDAQ}_t
+        \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{S\&P 500}_t + \varepsilon_t
     \]
+    \begin{center}
+        \includegraphics[width=0.92\textwidth]{Unknown-6.png}
+    \end{center}
+    Each panel: stock return vs same-day S\&P 500 return ($\beta$, $R^2$ in titles).
+\end{frame}
+
+\begin{frame}{Model A: Results}
     \begin{table}
-        \centering
-        \begin{tabular}{lcc}
+        \centering\footnotesize
+        \begin{tabular}{lccccc}
             \toprule
-            Coefficient & Estimate & $p$-value \\
+            & AAPL & MSFT & NVDA & GOOGL & META \\
             \midrule
-            $\beta_0$ (intercept) & $0.00015$ & $0.625$ (not significant) \\
-            $\beta_1$ (NASDAQ$_t$)  & $0.940$   & $\approx 5\times10^{-260}$ \\
+            $\beta$ (market) & $1.229$ & $1.140$ & $2.146$ & $1.272$ & $1.599$ \\
+            $R^2$            & $0.556$ & $0.526$ & $0.491$ & $0.468$ & $0.385$ \\
             \bottomrule
         \end{tabular}
     \end{table}
-    $R^2 = 0.584$, \quad Adjusted $R^2 = 0.583$
     \begin{itemize}
-        \item AAPL's daily return moves almost one-for-one with the NASDAQ ($\beta_1 \approx 1$)
-        \item $\approx 58\%$ of AAPL's return variance is explained by the index return
-        \item Residuals are fat-tailed (kurtosis $\approx 6$) -- typical of daily financial returns
+        \item All five betas are large and \textbf{highly significant} ($p \approx 0$);
+              $\beta$ is the stock's \textbf{market beta} (systematic-risk loading)
+        \item Every $\beta > 1$ (NVDA highest at $2.15$, MSFT lowest at $1.14$) --
+              these tech names amplify market moves
+        \item $R^2 \approx 0.39$--$0.56$: the market explains a large share of each
+              stock's daily variance; the rest ($1-R^2$) is idiosyncratic
+        \item Intercept $\alpha$ (Jensen's alpha) is \textbf{not} significant --
+              no abnormal return once market risk is accounted for
+        \item Residuals are fat-tailed (heavy tails in the Q--Q plot) -- typical of daily returns
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Model 2: Lagged Index Return($t{-}1$) $\to$ Stock Return($t$)}
-    \textbf{Question:} Can past returns help predict future returns?
+\begin{frame}{Model B: Lagged Market $\to$ Stock Return}
+    \textbf{Can yesterday's market move predict today's return?}
     \[
-        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{NASDAQ Return})_{t-1} + \varepsilon_t
+        \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{S\&P 500}_{t-1} + \varepsilon_t
     \]
     \begin{center}
-        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_2.png}
+        \includegraphics[width=0.92\textwidth]{Unknown-7.png}
     \end{center}
-\end{frame}
-
-\begin{frame}{Model 2: Results}
-    \[
-        \widehat{\text{AAPL}}_t = 0.00066 - 0.0024 \cdot \text{NASDAQ}_{t-1}
-    \]
-    \begin{table}
-        \centering
-        \begin{tabular}{lcc}
-            \toprule
-            Coefficient & Estimate & $p$-value \\
-            \midrule
-            $\beta_0$ (intercept)   & $0.00066$ & $0.159$ (not significant) \\
-            $\beta_1$ (NASDAQ$_{t-1}$) & $-0.0024$ & $0.943$ (not significant) \\
-            \bottomrule
-        \end{tabular}
-    \end{table}
-    $R^2 \approx 0.0000$, \quad Adjusted $R^2 \approx -0.0007$
     \begin{itemize}
-        \item Yesterday's NASDAQ return has \textbf{no} predictive power for today's AAPL return
-        \item Consistent with the (weak-form) Efficient Market Hypothesis
+        \item Slopes $\approx 0$, \textbf{not significant}, $R^2 \approx 0$ for every stock
+        \item Lagged index return has \textbf{no} predictive power -- weak-form efficiency
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Model 3: Google Return($t$) $\to$ Apple Return($t$)}
-    \textbf{Question:} Can one stock's returns explain another stock's returns?
+\begin{frame}{Model C: Own Lagged Return (AR1)}
+    \textbf{Does a stock's own past return predict its next return?}
     \[
-        \text{AAPL Return}_t = \beta_0 + \beta_1 \cdot (\text{GOOGL Return})_t + \varepsilon_t
+        \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{Stock}_{t-1} + \varepsilon_t
     \]
     \begin{center}
-        \includegraphics[width=0.6\textwidth]{../figures/simple_linear_3.png}
+        \includegraphics[width=0.92\textwidth]{Unknown-8.png}
     \end{center}
-\end{frame}
-
-\begin{frame}{Model 3: Results}
-    \[
-        \widehat{\text{AAPL}}_t = 0.00013 + 0.496 \cdot \text{GOOGL}_t
-    \]
-    \begin{table}
-        \centering
-        \begin{tabular}{lcc}
-            \toprule
-            Coefficient & Estimate & $p$-value \\
-            \midrule
-            $\beta_0$ (intercept)  & $0.00013$ & $0.750$ (not significant) \\
-            $\beta_1$ (GOOGL$_t$)  & $0.496$   & $\approx 6.5\times10^{-113}$ \\
-            \bottomrule
-        \end{tabular}
-    \end{table}
-    $R^2 = 0.314$, \quad Adjusted $R^2 = 0.313$
     \begin{itemize}
-        \item A 1\% same-day move in GOOGL is associated with a $\approx 0.5\%$ move in AAPL
-        \item $\approx 31\%$ of AAPL's variance explained -- less than the index (Model 1, 58\%)
-        \item Suggests a common market/sector factor, not a direct causal link
+        \item Daily autocorrelation is tiny ($\beta_1 \approx 0$), $R^2 \approx 0$
+        \item Returns behave like white noise -- no momentum / mean-reversion to exploit
     \end{itemize}
 \end{frame}
-
-% \subsection{Stage 1: Summary}
 
 \begin{frame}{Stage 1: Summary}
     \begin{table}
@@ -304,133 +290,123 @@
             \toprule
             Model & Predictor & $R^2$ & Significant? \\
             \midrule
-            1 & NASDAQ$_t$      & $0.584$ & Yes \\
-            2 & NASDAQ$_{t-1}$  & $0.000$ & No \\
-            3 & GOOGL$_t$     & $0.314$ & Yes \\
+            A & S\&P 500$_t$     & $0.556$ & Yes \\
+            B & S\&P 500$_{t-1}$ & $\approx 0.000$ & No \\
+            C & AAPL$_{t-1}$     & $\approx 0.000$ & No \\
             \bottomrule
         \end{tabular}
+        \\[2pt]
+        {\footnotesize (R$^2$ shown for AAPL; full sector range in Model A is $0.39$--$0.56$.)}
     \end{table}
     \begin{itemize}
-        \item Same-day market index return strongly explains AAPL's return ($R^2 = 0.58$)
-        \item Lagged (past) returns carry \textbf{no} predictive information -- market efficiency
-        \item Same-day peer-stock (GOOGL) return also explains a sizeable share ($R^2 = 0.31$),
-              likely via shared exposure to the market factor
+        \item Same-day market index return strongly explains each stock's return
+              ($R^2 \approx 0.39$--$0.56$ across the sector)
+        \item Lagged (past) returns -- index or own -- carry \textbf{no} predictive
+              information: consistent with weak-form market efficiency
+        \item Cross-stock co-movement (e.g. GOOGL vs AAPL) is really shared exposure to
+              this same market factor
     \end{itemize}
 \end{frame}
 
-
-
-\begin{frame}{Model A: Full Lagged Model}
-    \textbf{Question:} Can past returns predict future returns?
+% ===================== STAGE 2 =====================
+\begin{frame}{Stage 2: Multiple Linear Regression}
+    Predict a target stock's return from \textbf{several predictors jointly}:
     \footnotesize
     \[
-        \text{AAPL}_t = \beta_0 + \beta_1 \text{NASDAQ}_{t-1} + \beta_2 \text{AAPL}_{t-1} +\]
-        \[+\beta_3\text{MA}_{20}+\beta_4\text{MA}_{50}+\beta_5\text{MA}_{200}+\]
-        \[+\beta_6\text{VOL}_{20}+\beta_7\text{VOL}_{20}+\beta_8\text{VOL}_{20}+\]
-        \[+\beta_9\Delta\text{Volume}_{t-1}+\beta_{10}\text{VolRatio}_{t-1}+\varepsilon_t\]
-
+        \text{AAPL}_t = \beta_0 + \beta_1 \text{S\&P 500}_t + \beta_2 \text{S\&P 500}_{t-1}
+        + \beta_3 \text{AAPL}_{t-1} + \beta_4 \text{AAPL}_{t-2}
+    \]
+    \[
+        \qquad\quad + \beta_5 \text{MAgap}_{t-1} + \beta_6 \text{Vol}_{t-1}
+        + \beta_7 \text{RelVol}_{t-1} + \varepsilon_t
+    \]
     \normalsize
-    $R^2 = 0.010$, \quad Adjusted $R^2 = 0.001$, \quad $F$-test $p = 0.336$
     \begin{itemize}
-        \item Overall model is \textbf{not statistically significant}
-        \item Only \texttt{VolumeChg\_lag1} is individually significant ($p = 0.031$)
-        % \item All VIFs $< 5$ (max $\approx 3.4$) -- not a multicollinearity problem, these
-        %       features simply carry no information
+        \item \texttt{MAgap}: price vs its 20-day moving average; \texttt{Vol}: 20-day
+              realised volatility; \texttt{RelVol}: volume vs its 20-day average
+        \item All predictors except the same-day market are \textbf{strictly lagged} --
+              no look-ahead, so a model without S\&P 500$_t$ is genuinely usable to forecast
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Model B: Reduced Model}
-    \[
-        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{NASDAQ}_{t-1} + \beta_2 \cdot \text{AAPL}_{t-1} + \varepsilon_t
-    \]
-    \begin{table}
-        \centering
-        \begin{tabular}{lcc}
-            \toprule
-            Coefficient & Estimate & $p$-value \\
-            \midrule
-            $\beta_0$ (intercept)            & $0.0007$  & $0.201$ \\
-            $\beta_1$ (\texttt{NASDAQ\_lag1})  & $-0.0007$ & $0.383$ \\
-            $\beta_2$ (\texttt{AAPL\_lag1})  & $0.0009$  & $0.243$ \\
-            \bottomrule
-        \end{tabular}
-    \end{table}
-    $R^2 = 0.001$, \quad Adjusted $R^2 = -0.001$, \quad $F$-test $p = 0.506$
+\begin{frame}{Stage 2: Results (AAPL full model)}
+    \begin{center}
+        \includegraphics[width=0.95\textwidth]{Unknown-9.png}
+    \end{center}
     \begin{itemize}
-        \item Mirrors Stage 1 Model 2: lagged index return still has zero predictive power
-        \item Own lagged return adds nothing either
+        \item Only the \textbf{same-day market} term is significant; its coefficient
+              matches the Stage-1 beta
+        \item $R^2 \approx 0.57$, adjusted $R^2 \approx 0.56$ -- barely above the
+              market-only model; lagged \& technical predictors add almost nothing
+        \item All VIFs $< 5$ -- no multicollinearity; the predictors simply carry no signal
+        \item Residuals-vs-fitted fans out -- volatility clustering (heteroskedasticity)
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Model C: Volume-Focused Model}
-    \textbf{Question:} Can trading volume explain/predict returns?
-    \[
-        \text{AAPL}_t = \beta_0 + \beta_1 \cdot \text{AAPL}_{t-1} + \beta_2 \cdot \Delta\text{Volume}_{t-1}
-        + \beta_3 \cdot \text{VolRatio}_{t-1} + \varepsilon_t
-    \]
-    \begin{table}
-        \centering
-        \begin{tabular}{lcc}
-            \toprule
-            Coefficient & Estimate & $p$-value \\
-            \midrule
-            $\beta_0$ (intercept)                  & $0.0007$  & $0.200$ \\
-            $\beta_1$ (\texttt{AAPL\_lag1})        & $0.0004$  & $0.471$ \\
-            $\beta_2$ (\texttt{VolumeChg\_lag1})   & $-0.0013$ & $0.032$ \\
-            $\beta_3$ (\texttt{VolumeRatio\_lag1}) & $0.0009$  & $0.158$ \\
-            \bottomrule
-        \end{tabular}
-    \end{table}
-    $R^2 = 0.005$, \quad Adjusted $R^2 = 0.002$, \quad $F$-test $p = 0.152$
+% ===================== STAGE 3 =====================
+\begin{frame}{Stage 3: Model Selection (in- vs out-of-sample)}
+    Candidate models fit on the \textbf{same sample}; out-of-sample uses a chronological
+    80/20 split, benchmarked against the historical-mean forecast.
+    \begin{center}
+        \includegraphics[width=0.7\textwidth]{Unknown-10.png}
+    \end{center}
     \begin{itemize}
-        \item Overall model not significant, but \texttt{VolumeChg\_lag1} is ($p = 0.032$)
-        \item With 10 predictors tested in Model A, one hit at $p \approx 0.03$ is roughly
-              what chance alone would produce
+        \item AIC/BIC and adjusted $R^2$ prefer the parsimonious \textbf{market-only} model
+        \item Market-inclusive models keep $R^2_{\text{OOS}} \approx 0.29$ -- but only because they
+              use the \emph{same-day} market return (not a true forecast)
+        \item The honest lagged-only model has $R^2_{\text{OOS}} \approx 0$ (slightly negative):
+              \textbf{past information cannot beat predicting the mean}
     \end{itemize}
 \end{frame}
 
-% \subsection{Stage 3: Model Evaluation and Selection}
-
-\begin{frame}{Model Comparison}
-    \begin{table}
-        \centering
-        \begin{tabular}{lcccc}
-            \toprule
-            Model & $R^2$ & Adj. $R^2$ & AIC & BIC \\
-            \midrule
-            A (full lagged)    & $0.010$ & $0.001$  & $-6053.4$ & $-5997.9$ \\
-            B (reduced)        & $0.001$ & $-0.001$ & $-6059.5$ & $-6044.3$ \\
-            C (volume-focused) & $0.005$ & $0.002$  & $-6061.4$ & $-6041.2$ \\
-            \bottomrule
-        \end{tabular}
-    \end{table}
+\begin{frame}{Stage 3: Residual Diagnostics}
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{Unknown-11.png}
+    \end{center}
     \begin{itemize}
-        \item Model C has the lowest AIC; Model B has the lowest BIC -- the differences are negligible
-        \item Model A is worst on both criteria (most parameters, no gain in fit)
-        \item \textbf{None} of the three models pass the overall $F$-test at the 5\% level
+        \item \textbf{Jarque--Bera} rejects normality -- heavy tails, visible in the Q--Q tails
+        \item \textbf{Breusch--Pagan} rejects homoskedasticity -- variance clusters (scale--location fans out)
+        \item \textbf{Durbin--Watson} $\approx 2$ and Ljung--Box insignificant -- no exploitable autocorrelation
+        \item $\Rightarrow$ point estimates fine, but we report \textbf{HC/HAC robust} standard errors
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Residual Diagnostics (Model C)}
+% ===================== STAGE 4 (EXTENSION) =====================
+\begin{frame}{Extension: Beta Is Not Constant}
+    Re-estimate the market model on a rolling 120-day window: $\hat\beta_t$ over time.
+    \begin{center}
+        \includegraphics[width=0.95\textwidth]{Unknown-14.png}
+    \end{center}
     \begin{itemize}
-        \item No significant autocorrelation in residuals
-        \item Residuals are fat-tailed (kurtosis $\approx 8.7$) -- normality is rejected
-        \item Same pattern as Stage 1 -- typical of daily financial returns, and
-              largely independent of which (weak) model is used
+        \item The single Stage-1 beta is a 5-year \emph{average} -- the true loading drifts a lot
+        \item Betas climb inside market drawdowns (shaded): in selloffs correlations
+              spike and \textbf{everything moves together} -- risk is state-dependent
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Stage 2/3: Summary}
+\begin{frame}{Extension: Systematic Share Over Time}
+    Rolling $R^2$ of the market model -- the fraction of variance the market explains.
+    \begin{center}
+        \includegraphics[width=0.92\textwidth]{Unknown-13.png}
+    \end{center}
     \begin{itemize}
-        \item \textbf{Market index returns:} explain AAPL \emph{contemporaneously} ($R^2 = 0.58$,
-              Stage 1), but the lagged index has \textbf{zero} predictive power ($R^2 \approx 0$)
-        \item \textbf{Past returns:} across Models A, B, C, $R^2 \le 1\%$ and the $F$-test is
-              never significant -- past returns do \textbf{not} predict future returns
-        \item \textbf{Trading volume:} \texttt{VolumeChg\_lag1} is marginally significant alone
-              ($p \approx 0.03$), but the overall volume model is not ($p = 0.152$) -- weak,
-              inconclusive evidence
-        \item \textbf{Conclusion:} results are consistent with (weak-form) market efficiency --
-              information is priced in immediately, leaving no exploitable pattern in lagged data
+        \item $R^2$ rises in stressed periods -- the market dominates exactly when
+              diversification is least helpful
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Linear Regression: Summary}
+    \begin{itemize}
+        \item \textbf{Market explains, contemporaneously:} same-day index return is the
+              dominant driver ($R^2 \approx 0.39$--$0.56$); its slope is the stock's beta
+        \item \textbf{Past returns do not predict:} lagged index, own lags, moving-average,
+              volatility and volume are jointly insignificant and fail out-of-sample
+        \item \textbf{Volume:} does not explain the \emph{signed} daily return
+        \item \textbf{Best model} = the market model; \textbf{best genuine predictor} = the mean
+        \item \textbf{Beta is dynamic:} it rises in drawdowns -- a static regression hides
+              the risk exactly when it matters most
+        \item Overall: consistent with \textbf{weak-form efficiency with time-varying volatility}
+              -- the conditional \emph{mean} is unpredictable, the \emph{variance} is not
     \end{itemize}
 \end{frame}
 
