@@ -152,32 +152,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-\begin{frame}{What the Three Methods Agree On}
-    \begin{itemize}
-        \item \textbf{Linear Regression:} only contemporaneous information explains
-              returns -- lagged predictors have $R^2 \approx 0$
-        \item \textbf{Bayesian Analysis:} stable long-run parameters exist
-              ($\hat{p} \approx 0.530$,\ $\hat{\mu} \approx 0.0007$) but with
-              uncertainty quantified via the full posterior
-        \item \textbf{Markov Chains:} regime structure is persistent, but mechanically
-              so due to the rolling-window construction
-        \item \textbf{Common thread:} weak-form market efficiency -- daily prices are
-              unpredictable, but statistical structure exists at longer timescales
-    \end{itemize}
-\end{frame}
-
 \section{Project 2c - Linear Regression Models}
 
 % ===================== DATA & METHODOLOGY =====================
@@ -196,7 +170,7 @@
 \begin{frame}{Strong Co-movement Across the Sector}
     Daily-return correlations among the five tech stocks and the index.
     \begin{center}
-        \includegraphics[width=0.55\textwidth]{Screenshot 2026-06-26 at 12.24.21.png}
+        \includegraphics[width=0.55\textwidth]{../figures/Screenshot 2026-06-26 at 12.24.21.png}
     \end{center}
     \begin{itemize}
         \item All pairs are strongly positively correlated -- the stocks move together
@@ -225,7 +199,7 @@
         \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{S\&P 500}_t + \varepsilon_t
     \]
     \begin{center}
-        \includegraphics[width=0.92\textwidth]{Unknown-6.png}
+        \includegraphics[width=0.92\textwidth]{../figures/Unknown-6.png}
     \end{center}
     Each panel: stock return vs same-day S\&P 500 return ($\beta$, $R^2$ in titles).
 \end{frame}
@@ -261,7 +235,7 @@
         \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{S\&P 500}_{t-1} + \varepsilon_t
     \]
     \begin{center}
-        \includegraphics[width=0.92\textwidth]{Unknown-7.png}
+        \includegraphics[width=0.92\textwidth]{../figures/Unknown-7.png}
     \end{center}
     \begin{itemize}
         \item Slopes $\approx 0$, \textbf{not significant}, $R^2 \approx 0$ for every stock
@@ -275,7 +249,7 @@
         \text{Stock}_t = \beta_0 + \beta_1 \cdot \text{Stock}_{t-1} + \varepsilon_t
     \]
     \begin{center}
-        \includegraphics[width=0.92\textwidth]{Unknown-8.png}
+        \includegraphics[width=0.92\textwidth]{../figures/Unknown-8.png}
     \end{center}
     \begin{itemize}
         \item Daily autocorrelation is tiny ($\beta_1 \approx 0$), $R^2 \approx 0$
@@ -309,6 +283,7 @@
 \end{frame}
 
 % ===================== STAGE 2 =====================
+% ===================== STAGE 2 (setup — unchanged) =====================
 \begin{frame}{Stage 2: Multiple Linear Regression}
     Predict a target stock's return from \textbf{several predictors jointly}:
     \footnotesize
@@ -329,53 +304,61 @@
     \end{itemize}
 \end{frame}
 
+% ===================== STAGE 2 (results — numbers added) =====================
 \begin{frame}{Stage 2: Results (AAPL full model)}
+    \footnotesize
+    Obtained model (only the significant term shown explicitly):
+    \[
+        \widehat{\text{AAPL}}_t \;\approx\; \hat\beta_0 \;+\; 1.23\,\text{S\&P 500}_t
+        \;+\;(\text{6 small, insignificant terms})
+    \]
+    \normalsize
     \begin{center}
-        \includegraphics[width=0.95\textwidth]{Unknown-9.png}
+        \includegraphics[width=0.78\textwidth]{../figures/Unknown-9.png}
     \end{center}
     \begin{itemize}
-        \item Only the \textbf{same-day market} term is significant; its coefficient
-              matches the Stage-1 beta
+        \item Only the \textbf{same-day market} term is significant:
+              $\hat\beta_1 \approx 1.23$, $p < 0.001$ (matches the Stage-1 beta);
+              the six lagged/technical terms are individually insignificant ($p > 0.05$)
         \item $R^2 \approx 0.57$, adjusted $R^2 \approx 0.56$ -- barely above the
               market-only model; lagged \& technical predictors add almost nothing
         \item All VIFs $< 5$ -- no multicollinearity; the predictors simply carry no signal
-        \item Residuals-vs-fitted fans out -- volatility clustering (heteroskedasticity)
     \end{itemize}
 \end{frame}
 
-% ===================== STAGE 3 =====================
+% ===================== STAGE 3 (selection — numbers added) =====================
 \begin{frame}{Stage 3: Model Selection (in- vs out-of-sample)}
     Candidate models fit on the \textbf{same sample}; out-of-sample uses a chronological
     80/20 split, benchmarked against the historical-mean forecast.
     \begin{center}
-        \includegraphics[width=0.7\textwidth]{Unknown-10.png}
+        \includegraphics[width=0.62\textwidth]{../figures/Unknown-10.png}
     \end{center}
+    \vspace{-2pt}
+    {\footnotesize
+    \begin{center}
+        \begin{tabular}{lcc}
+            \toprule
+            Model & adj.\ $R^2$ & $R^2_{\text{OOS}}$ \\
+            \midrule
+            Market-only (M1)            & $\approx 0.56$ & $\approx 0.29$ \\
+            Full, 7 predictors (M4)     & $\approx 0.56$ & $\approx 0.29$ \\
+            Predictive, lagged-only (P) & $\approx 0.00$ & $\approx 0.00$ \\
+            \bottomrule
+        \end{tabular}
+    \end{center}}
     \begin{itemize}
         \item AIC/BIC and adjusted $R^2$ prefer the parsimonious \textbf{market-only} model
-        \item Market-inclusive models keep $R^2_{\text{OOS}} \approx 0.29$ -- but only because they
-              use the \emph{same-day} market return (not a true forecast)
         \item The honest lagged-only model has $R^2_{\text{OOS}} \approx 0$ (slightly negative):
               \textbf{past information cannot beat predicting the mean}
     \end{itemize}
 \end{frame}
 
-\begin{frame}{Stage 3: Residual Diagnostics}
-    \begin{center}
-        \includegraphics[width=0.5\textwidth]{Unknown-11.png}
-    \end{center}
-    \begin{itemize}
-        \item \textbf{Jarque--Bera} rejects normality -- heavy tails, visible in the Q--Q tails
-        \item \textbf{Breusch--Pagan} rejects homoskedasticity -- variance clusters (scale--location fans out)
-        \item \textbf{Durbin--Watson} $\approx 2$ and Ljung--Box insignificant -- no exploitable autocorrelation
-        \item $\Rightarrow$ point estimates fine, but we report \textbf{HC/HAC robust} standard errors
-    \end{itemize}
-\end{frame}
 
 % ===================== STAGE 4 (EXTENSION) =====================
 \begin{frame}{Extension: Beta Is Not Constant}
     Re-estimate the market model on a rolling 120-day window: $\hat\beta_t$ over time.
     \begin{center}
-        \includegraphics[width=0.95\textwidth]{Unknown-14.png}
+        \includegraphics[width=0.95\textwidth]{../figures/Unknown-14.png}
     \end{center}
     \begin{itemize}
         \item The single Stage-1 beta is a 5-year \emph{average} -- the true loading drifts a lot
@@ -387,7 +370,7 @@
 \begin{frame}{Extension: Systematic Share Over Time}
     Rolling $R^2$ of the market model -- the fraction of variance the market explains.
     \begin{center}
-        \includegraphics[width=0.92\textwidth]{Unknown-13.png}
+        \includegraphics[width=0.92\textwidth]{../figures/Unknown-13.png}
     \end{center}
     \begin{itemize}
         \item $R^2$ rises in stressed periods -- the market dominates exactly when
@@ -405,8 +388,6 @@
         \item \textbf{Best model} = the market model; \textbf{best genuine predictor} = the mean
         \item \textbf{Beta is dynamic:} it rises in drawdowns -- a static regression hides
               the risk exactly when it matters most
-        \item Overall: consistent with \textbf{weak-form efficiency with time-varying volatility}
-              -- the conditional \emph{mean} is unpredictable, the \emph{variance} is not
     \end{itemize}
 \end{frame}
 
